@@ -88,9 +88,9 @@ class SequenceLoader:
         self._num_cams = len(self._rs_serials)
 
         # HoloLens metadata
-        self._hl_serial = data["hololens"]["serial"]
-        self._hl_pv_width = data["hololens"]["pv_width"]
-        self._hl_pv_height = data["hololens"]["pv_height"]
+        # self._hl_serial = data["hololens"]["serial"]
+        # self._hl_pv_width = data["hololens"]["pv_width"]
+        # self._hl_pv_height = data["hololens"]["pv_height"]
 
         # Object models file paths
         self._object_textured_files = [
@@ -130,14 +130,14 @@ class SequenceLoader:
         )
         rs_Ks_inv = np.stack([np.linalg.inv(K) for K in rs_Ks], axis=0)
 
-        hl_K = read_K_from_yaml(self._hl_serial)
-        hl_K_inv = np.linalg.inv(hl_K)
+        # hl_K = read_K_from_yaml(self._hl_serial)
+        # hl_K_inv = np.linalg.inv(hl_K)
 
         # Convert intrinsics to torch tensors
         self._rs_Ks = torch.from_numpy(rs_Ks).to(self._device)
         self._rs_Ks_inv = torch.from_numpy(rs_Ks_inv).to(self._device)
-        self._hl_K = torch.from_numpy(hl_K).to(self._device)
-        self._hl_K_inv = torch.from_numpy(hl_K_inv).to(self._device)
+        # self._hl_K = torch.from_numpy(hl_K).to(self._device)
+        # self._hl_K_inv = torch.from_numpy(hl_K_inv).to(self._device)
 
     def _load_extrinsics(self, file_name):
         def create_mat(values):

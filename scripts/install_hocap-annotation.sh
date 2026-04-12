@@ -3,6 +3,9 @@
 # Load shared config
 source "$(dirname "$0")/config.sh"
 
+# install torch (12.4)
+# pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
+
 # Install Python dependencies from requirements.txt
 log_message "Installing Python dependencies from requirements.txt..."
 if "${PYTHON_PATH}" -m pip install --no-cache-dir -r "${PROJ_ROOT}/requirements.txt"; then
@@ -12,12 +15,12 @@ else
 fi
 
 # Install chumpy from GitHub
-log_message "Installing chumpy from GitHub..."
-if "${PYTHON_PATH}" -m pip install --no-cache-dir "git+https://github.com/gobanana520/chumpy.git"; then
-    log_message "chumpy installed successfully."
-else
-    handle_error "Failed to install chumpy."
-fi
+# log_message "Installing chumpy from GitHub..."
+# if "${PYTHON_PATH}" -m pip install --no-cache-dir "git+https://github.com/gobanana520/chumpy.git"; then
+#     log_message "chumpy installed successfully."
+# else
+#     handle_error "Failed to install chumpy."
+# fi
 
 # Install manopth from GitHub
 log_message "Installing manopth from GitHub..."
@@ -45,7 +48,7 @@ if cd "$MYCUDA_DIR"; then
     rm -rf build *egg* *.so
 
     log_message "Installing meshsdf_loss..."
-    if "${PYTHON_PATH}" -m pip install . --no-cache-dir; then
+    if "${PYTHON_PATH}" -m pip install . --no-cache-dir --no-build-isolation; then
         log_message "meshsdf_loss installed successfully."
     else
         handle_error "Failed to install meshsdf_loss."

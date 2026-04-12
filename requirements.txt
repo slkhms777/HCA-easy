@@ -9,6 +9,10 @@ tensorboard>=2.17.0
 jupyterlab>=3.0.0
 ipywidgets>=8.0.3
 
+ipympl
+ipynb
+ipython
+
 # -------------------------
 # Build Tools and Extensions
 # -------------------------

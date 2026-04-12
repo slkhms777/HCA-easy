@@ -208,7 +208,7 @@ class HandJointsDetector:
 
         t_start = time.time()
 
-        # self.detect_mp_handmarks()
+        self.detect_mp_handmarks()
         self.render_mp_handmarks()
 
         self._logger.info(f"Done!!! ({time.time() - t_start:.2f} s)")

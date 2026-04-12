@@ -20,7 +20,7 @@ SAM2_DIR="${PROJ_ROOT}/third_party/sam2"
 log_message "Building SAM2..."
 
 # Initialize the SAM2 submodule
-log_message "Initializing FoundationPose submodule..."
+log_message "Initializing SAM2 submodule..."
 if git submodule update --init --recursive -- "${SAM2_DIR}"; then
     log_message "SAM2 submodule initialized successfully."
 else

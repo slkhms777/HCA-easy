@@ -86,9 +86,9 @@ class HOCapLoader:
         self._rs_serials = data["realsense"]["serials"]
         self._rs_width = data["realsense"]["width"]
         self._rs_height = data["realsense"]["height"]
-        self._hl_serial = data["hololens"]["serial"]
-        self._hl_height = data["hololens"]["pv_height"]
-        self._hl_width = data["hololens"]["pv_width"]
+        # self._hl_serial = data["hololens"]["serial"]
+        # self._hl_height = data["hololens"]["pv_height"]
+        # self._hl_width = data["hololens"]["pv_width"]
         self._object_textured_files = [
             self._models_folder / obj_id / "textured_mesh.obj"
             for obj_id in self._object_ids
@@ -125,7 +125,7 @@ class HOCapLoader:
             [read_K_from_yaml(serial) for serial in self._rs_serials],
             axis=0,
         )
-        self._hl_K = read_K_from_yaml(self._hl_serial)
+        # self._hl_K = read_K_from_yaml(self._hl_serial)
 
     def _load_extrinsics(self, file_name):
         def create_mat(values):

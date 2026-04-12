@@ -30,7 +30,7 @@ fi
 
 # Install PyTorch3D
 log_message "Installing PyTorch3D..."
-if FORCE_CUDA=1 "${PYTHON_PATH}" -m pip install --no-cache-dir "git+https://github.com/facebookresearch/pytorch3d.git@stable"; then
+if FORCE_CUDA=1 "${PYTHON_PATH}" -m pip install --no-cache-dir "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation; then
     log_message "PyTorch3D installed successfully."
 else
     handle_error "Failed to install PyTorch3D."

@@ -17,10 +17,10 @@ class HOCapRenderer:
         self._rs_height = self._reader.rs_height
         self._rs_serials = self._reader.rs_serials
         self._rs_Ks = self._reader.rs_Ks
-        self._hl_serial = self._reader.hl_serial
-        self._hl_K = self._reader.hl_K
-        self._hl_width = self._reader.hl_width
-        self._hl_height = self._reader.hl_height
+        # self._hl_serial = self._reader.hl_serial
+        # self._hl_K = self._reader.hl_K
+        # self._hl_width = self._reader.hl_width
+        # self._hl_height = self._reader.hl_height
         self._object_ids = self._reader.object_ids
         self._mano_beta = self._reader.mano_beta
         self._mano_sides = self._reader.mano_sides
@@ -40,7 +40,7 @@ class HOCapRenderer:
         for serial, K in zip(self._rs_serials, self._rs_Ks):
             self._renderer.add_camera(K, serial)
         # Add hololens camera
-        self._renderer.add_camera(self._hl_K, self._hl_serial)
+        # self._renderer.add_camera(self._hl_K, self._hl_serial)
 
     def _add_objects_to_renderer(self):
         for object_id, mesh_file in zip(
