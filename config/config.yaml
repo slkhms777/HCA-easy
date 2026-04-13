@@ -1,3 +1,4 @@
+
 device: "cuda"
 sam2:
   model_checkpoint: "config/checkpoints/sam2/sam2.1_hiera_large.pt"
@@ -9,32 +10,18 @@ mano:
   num_pca_comps: 45
 mp_hand:
   max_num_hands: 2
-  min_hand_detection_confidence: 0.1
-  min_tracking_confidence: 0.5
-  min_hand_presence_confidence: 0.5
+  min_hand_detection_confidence: 0.08
+  min_tracking_confidence: 0.45
+  min_hand_presence_confidence: 0.45
   running_mode: "video"
   frame_rate: 30
   model_asset_path: "config/checkpoints/mediapipe/hand_landmarker.task"
   device: gpu
-camera_serials:
-  rs_serials:
-    - "105322251564"
-    - "043422252387"
-    - "037522251142"
-    - "105322251225"
-    - "108222250342"
-    - "117222250549"
-    - "046122250168"
-    - "115422250549"
-  rs_master: "105322251564"
-  hl_serial: hololens2-71l1uk
 optimization:
   hand_pose_solver:
     lr: 0.001
     total_steps: 10000
-    sdf_steps: 100
     smooth_steps: 500
-    w_sdf: 1.0
     w_kpt_2d: 1.0
     w_kpt_3d: 1.0
     w_reg: 0.001
@@ -44,17 +31,6 @@ optimization:
     w_smooth_acc_rot: 1.0
     w_smooth_acc_trans: 1.0
     smooth_window_size: 1
-    sdf_dist_thresh: 0.01
-    load_offline_dpts: false
-    valid_rs_serials:
-      - "105322251564"
-      - "043422252387"
-      - "037522251142"
-      - "105322251225"
-      - "108222250342"
-      - "117222250549"
-      - "046122250168"
-      - "115422250549"
     valid_mano_joint_indices:
       - 0
       - 1
@@ -69,40 +45,3 @@ optimization:
       - 16
       - 18
       - 20
-  object_pose_solver:
-    lr: 0.001
-    total_steps: 50
-    sdf_steps: 50
-    smooth_steps: 50
-    w_sdf: 1.0
-    w_reg: 1.0
-    w_smooth: 0.01
-    w_smooth_rot: 0.1
-    w_smooth_trans: 1.0
-    w_smooth_acc_rot: 1.0
-    w_smooth_acc_trans: 0.1
-    smooth_window_size: 3
-    sdf_dist_thresh: 0.01
-    use_object_masks: false
-    load_offline_dpts: false
-  joint_pose_solver:
-    lr: 0.001
-    total_steps: 50
-    sdf_steps: 50
-    w_sdf: 10.0
-    w_reg_m: 1.0
-    w_reg_o: 1.0
-    w_smooth_m: 0.01
-    w_smooth_rot_m: 0.0
-    w_smooth_trans_m: 0.0
-    w_smooth_acc_rot_m: 1.0
-    w_smooth_acc_trans_m: 1.0
-    smooth_window_size_m: 1
-    w_smooth_o: 0.01
-    w_smooth_rot_o: 0.1
-    w_smooth_trans_o: 1.0
-    w_smooth_acc_rot_o: 1.0
-    w_smooth_acc_trans_o: 0.1
-    smooth_window_size_o: 3
-    sdf_dist_thresh: 0.01
-    load_offline_dpts: false

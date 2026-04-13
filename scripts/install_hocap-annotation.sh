@@ -14,8 +14,9 @@ else
     handle_error "Failed to install Python dependencies."
 fi
 
-# Install chumpy from GitHub
-# log_message "Installing chumpy from GitHub..."
+Install chumpy from GitHub
+log_message "Installing chumpy from GitHub..."
+pip install git+https://github.com/mattloper/chumpy --no-build-isolation --no-cache-dir
 # if "${PYTHON_PATH}" -m pip install --no-cache-dir "git+https://github.com/gobanana520/chumpy.git"; then
 #     log_message "chumpy installed successfully."
 # else

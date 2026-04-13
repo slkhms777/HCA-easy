@@ -6,7 +6,6 @@ os.environ["MPLBACKEND"] = "Agg"  # Disable matplotlib GUI backend
 from pprint import pformat
 from hocap_annotation.utils import *
 from hocap_annotation.loss import (
-    MeshSDFLoss,
     Keypoint2DLoss,
     Keypoint3DLoss,
     MANORegLoss,
@@ -17,9 +16,10 @@ from hocap_annotation.rendering import HOCapRenderer
 
 
 class ManoPoseSolver:
-    def __init__(self, sequence_folder, debug=False) -> None:
+    def __init__(self, sequence_folder, debug=False, single_process=False) -> None:
         self._data_folder = Path(sequence_folder)
         self._debug = debug
+        self._single_process = single_process
         self._device = CFG.device
         self._save_folder = self._data_folder / "processed/hand_pose_solver"
         self._save_folder.mkdir(parents=True, exist_ok=True)
@@ -49,9 +49,7 @@ class ManoPoseSolver:
         optim_config = CFG.optimization.hand_pose_solver
         self._lr = optim_config["lr"]
         self._total_steps = optim_config["total_steps"]
-        self._sdf_steps = optim_config["sdf_steps"]
         self._smooth_steps = optim_config["smooth_steps"]
-        self._w_sdf = optim_config["w_sdf"]
         self._w_kpt_2d = optim_config["w_kpt_2d"]
         self._w_kpt_3d = optim_config["w_kpt_3d"]
         self._w_reg = optim_config["w_reg"]
@@ -61,10 +59,14 @@ class ManoPoseSolver:
         self._w_smooth_acc_rot = optim_config["w_smooth_acc_rot"]
         self._w_smooth_acc_trans = optim_config["w_smooth_acc_trans"]
         self._win_size = optim_config["smooth_window_size"]
-        self._dist_thresh = optim_config["sdf_dist_thresh"]
-        self._load_offline_dpts = optim_config["load_offline_dpts"]
-        self._valid_rs_serials = optim_config["valid_rs_serials"]
+        # self._valid_rs_serials = optim_config["valid_rs_serials"]
         self._valid_mano_joint_indices = optim_config["valid_mano_joint_indices"]
+        
+        # 从meta中读取valid_rs_serials，确保与数据加载器一致
+        meta_path = self._data_folder / "meta.yaml"
+        meta_data = read_data_from_yaml(meta_path)
+        self._valid_rs_serials = meta_data["realsense"]["serials"]
+        
         self._logger.debug(
             "Optimization Config:\n" + pformat(optim_config, sort_dicts=False)
         )
@@ -186,37 +188,6 @@ class ManoPoseSolver:
         p_2d = p_2d_hom[..., :2] / p_2d_hom[..., 2:3]  # Shape: (N, C, P, 2)
         return p_2d
 
-    def _get_dpts_for_loss_sdf(self, verts, faces, dpts, dist_thresh):
-        _, dist, _ = self._meshsdf_loss(verts, faces, dpts)
-        return dpts[dist < dist_thresh]
-
-    def _loss_sdf(self, verts_list, faces, dpts_list):
-        def loss_sdf(verts, faces, dpts):
-            if dpts.size(0) < 2000:
-                return self._zero
-            loss, _, _ = self._meshsdf_loss(verts, faces, dpts)
-            loss *= 1e3  # scale to meters
-            return loss
-
-        if len(verts_list) != len(dpts_list):
-            msg = f"Length mismatch: verts_list has {len(verts_list)} items, dpts_list has {len(dpts_list)}."
-            self._logger.error(msg)
-            raise ValueError(msg)
-
-        losses = [None] * len(verts_list)
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(loss_sdf, verts, faces, dpts): i
-                for i, (verts, dpts) in enumerate(zip(verts_list, dpts_list))
-            }
-            for future in concurrent.futures.as_completed(futures):
-                i = futures[future]
-                losses[i] = future.result()
-            futures.clear()
-
-        total_loss = torch.stack(losses, dim=0)
-        total_loss = total_loss.sum() / len(verts_list)
-        return total_loss
 
     def _initialize_pose_m_from_3d_joints(self, joints_3d):
         pose_m = np.zeros(
@@ -230,82 +201,18 @@ class ManoPoseSolver:
         ]
         return pose_m
 
-    def _prepare_dpts_list_for_loss_sdf(self, subset):
-        self._logger.info(f"Preparing dpts for SDF loss...")
-        save_dpts_folder = self._save_folder / "dpts"
-        save_dpts_folder.mkdir(parents=True, exist_ok=True)
-
-        dpts_files = sorted(save_dpts_folder.glob("dpts_*.ply"))
-        dpts_list = [None] * self._num_frames
-        if self._load_offline_dpts and len(dpts_files) == self._num_frames:
-            self._logger.info(f"Loading offline dpts...")
-            tqbar = tqdm(total=self._num_frames, ncols=100)
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = {
-                    executor.submit(read_points_from_ply, dpts_f): idx
-                    for idx, dpts_f in enumerate(dpts_files)
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    idx = futures[future]
-                    dpts_list[idx] = torch.from_numpy(future.result()).to(self._device)
-                    tqbar.update(1)
-                futures.clear()
-            tqbar.close()
-        else:
-            self._logger.info(f"Generating dpts...")
-            faces, _ = self._mano_group_layer.get_f_from_inds(subset)
-            verts, _ = self._mano_group_layer_forward(self._pose_m, subset)
-            for f_idx in tqdm(range(self._num_frames), ncols=100):
-                self._data_loader.step_by_frame_id(f_idx)
-                points = self._data_loader.points[self._data_loader.masks]
-                points = self._get_dpts_for_loss_sdf(
-                    verts[f_idx], faces, points, self._dist_thresh
-                )
-                points = process_points(
-                    points=points, voxel_size=0.003, remove_outliers=True
-                )
-                if points.size(0) == 0:
-                    self._logger.warning(
-                        f"No valid dpts for frame {f_idx}, using zeros."
-                    )
-                    points = torch.zeros(
-                        (0, 3), dtype=torch.float32, device=self._device
-                    )
-                dpts_list[f_idx] = points
-
-            # Save dpts to files
-            self._logger.info("Saving dpts to files...")
-            tqbar = tqdm(total=self._num_frames, ncols=100)
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = {
-                    executor.submit(
-                        write_points_to_ply,
-                        dpts_list[f_idx].cpu().numpy(),
-                        save_dpts_folder / f"dpts_{f_idx:06d}.ply",
-                    ): f_idx
-                    for f_idx in range(self._num_frames)
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    future.result()
-                    tqbar.update(1)
-                futures.clear()
-            tqbar.close()
-        self._logger.info("Done preparing dpts for SDF loss.")
-        return dpts_list
-
     def _save_log_loss(self, save_name):
         self._logger.info("Saving loss log...")
         np.savez(
             self._save_folder / f"{save_name}.npz",
             total=self._log_loss[0],
-            sdf=self._log_loss[1],
-            kpt_2d=self._log_loss[2],
-            kpt_3d=self._log_loss[3],
-            reg=self._log_loss[4],
-            smooth=self._log_loss[5],
+            kpt_2d=self._log_loss[1],
+            kpt_3d=self._log_loss[2],
+            reg=self._log_loss[3],
+            smooth=self._log_loss[4],
         )
         loss_curve_img = draw_losses_curve(
-            self._log_loss, ["total", "sdf", "kpt_2d", "kpt_3d", "reg", "smooth"]
+            self._log_loss, ["total", "kpt_2d", "kpt_3d", "reg", "smooth"]
         )
         write_rgb_image(self._save_folder / f"{save_name}_curve.png", loss_curve_img)
 
@@ -326,7 +233,6 @@ class ManoPoseSolver:
 
     def initialize_optimizer(self):
         self._logger.info("Initializing optimizer...")
-        self._meshsdf_loss = MeshSDFLoss(loss_type="l2").to(self._device)
         self._loss_kpt_2d_m = Keypoint2DLoss(loss_type="l2_norm").to(self._device)
         self._loss_kpt_3d_m = Keypoint3DLoss(loss_type="l2_norm").to(self._device)
         self._loss_reg_m = MANORegLoss().to(self._device)
@@ -349,8 +255,8 @@ class ManoPoseSolver:
             self._target_joints_3d = torch.from_numpy(joints_3d).to(self._device)
             self._logger.info(f"target_joints_3d: {self._target_joints_3d.shape}")
 
-        # loss, sdf, kpt_2d, kpt_3d, reg, smooth
-        self._log_loss = np.zeros((6, self._total_steps), dtype=np.float32)
+        # loss, kpt_2d, kpt_3d, reg, smooth
+        self._log_loss = np.zeros((5, self._total_steps), dtype=np.float32)
 
         # Load 2d keypoints for hands
         if self._w_kpt_2d > 0:
@@ -374,18 +280,6 @@ class ManoPoseSolver:
             # Get MANO vertices and joints
             verts_m, joints_m = self._mano_group_layer_forward(self._pose_m, subset_m)
 
-            # Prepare dpts for SDF loss
-            if self._w_sdf > 0 and step == self._total_steps - self._sdf_steps:
-                self.save_results(loss_name="loss_kpt", poses_m_name="poses_m_kpt")
-                # self.render_optimized_poses(
-                #     video_name="vis_hand_pose_solver_kpt", poses_m_name="poses_m_kpt"
-                # )
-                dpts_list = self._prepare_dpts_list_for_loss_sdf(subset_m)
-                tt_s = time.time()
-                ttt_s = time.time()
-                self._log_info_steps = 10
-                self._log_debug_steps = 1
-
             # Calculate losses
             if self._w_kpt_2d == 0:
                 loss_kpt_2d = self._zero
@@ -406,14 +300,6 @@ class ManoPoseSolver:
                 )
                 loss_kpt_3d *= self._w_kpt_3d
 
-            if self._w_sdf == 0:
-                loss_sdf = self._zero
-            elif step >= self._total_steps - self._sdf_steps:
-                loss_sdf = self._loss_sdf(verts_m, faces_m, dpts_list)
-                loss_sdf *= self._w_sdf
-            else:
-                loss_sdf = self._zero
-
             if self._w_reg == 0:
                 loss_reg = self._zero
             else:
@@ -428,7 +314,7 @@ class ManoPoseSolver:
             else:
                 loss_smooth = self._zero
 
-            loss = loss_sdf + loss_kpt_2d + loss_kpt_3d + loss_reg + loss_smooth
+            loss = loss_kpt_2d + loss_kpt_3d + loss_reg + loss_smooth
 
             # Set grad to None to prevent Adam from updating the parameters even when
             # the grad are all zeros. An alternative is to place this before the
@@ -445,7 +331,6 @@ class ManoPoseSolver:
 
             self._log_loss[:, step] = [
                 loss.item(),
-                loss_sdf.item(),
                 loss_kpt_2d.item(),
                 loss_kpt_3d.item(),
                 loss_reg.item(),
@@ -455,7 +340,6 @@ class ManoPoseSolver:
             log_msg = (
                 f"step: {step+1:04d}/{self._total_steps:04d} "
                 + f"| loss: {loss.item():11.8f} "
-                + f"| sdf: {loss_sdf.item():11.8f} "
                 + f"| kpt_2d: {loss_kpt_2d.item():11.8f} "
                 + f"| kpt_3d: {loss_kpt_3d.item():11.8f} "
                 + f"| reg: {loss_reg.item():11.8f} "
@@ -510,6 +394,7 @@ class ManoPoseSolver:
             save_video_path=self._save_folder / f"{video_name}.mp4",
             vis_only=True,
             save_vis=True,
+            single_process=self._single_process,
         )
         self._logger.debug(
             f">>>>>>>>>> Rendering Done!!! ({time.time() - t_s:.2f}s) <<<<<<<<<<"
@@ -545,10 +430,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--debug", action="store_true", help="Whether to enable debug mode"
     )
+    parser.add_argument(
+        "--single_process",
+        action="store_true",
+        help="Use single-process rendering to avoid multiprocessing pickle errors.",
+    )
     args = parser.parse_args()
 
     if args.sequence_folder is None:
         raise ValueError("Please provide the sequence folder!")
 
-    solver = ManoPoseSolver(args.sequence_folder, args.debug)
+    solver = ManoPoseSolver(
+        args.sequence_folder,
+        args.debug,
+        single_process=args.single_process,
+    )
+    print(solver._valid_rs_serials)
     solver.run()

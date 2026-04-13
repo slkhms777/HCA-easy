@@ -1,6 +1,7 @@
 from ..layers import MANOGroupLayer, ObjectGroupLayer
 
 from ..utils import *
+from .extrinsics import load_extrinsics
 
 
 class SequenceLoader:
@@ -105,8 +106,8 @@ class SequenceLoader:
         # Load camera intrinsics
         self._load_intrinsics()
 
-        # Load rs camera extrinsics
-        self._load_extrinsics(data["extrinsics"])
+        # Load rs camera extrinsics from per-camera cam2world/world2cam files
+        self._load_extrinsics(data.get("extrinsics"))
 
         # Load MANO shape parameters
         self._mano_beta = self._load_mano_beta()
@@ -139,42 +140,36 @@ class SequenceLoader:
         # self._hl_K = torch.from_numpy(hl_K).to(self._device)
         # self._hl_K_inv = torch.from_numpy(hl_K_inv).to(self._device)
 
-    def _load_extrinsics(self, file_name):
-        def create_mat(values):
-            return np.array(
-                [values[0:4], values[4:8], values[8:12], [0, 0, 0, 1]], dtype=np.float32
-            )
+    def _load_extrinsics(self, extrinsics_source=None):
+        data = load_extrinsics(
+            calib_folder=self._calib_folder,
+            subject_id=self._subject_id,
+            serials=self._rs_serials,
+            extrinsics_source=extrinsics_source,
+        )
 
-        data = read_data_from_yaml(self._calib_folder / "extrinsics" / f"{file_name}")
-
-        # Read rs_master serial
         self._rs_master = data["rs_master"]
 
-        # Create extrinsics matrices
-        extrinsics = data["extrinsics"]
-        tag_0 = create_mat(extrinsics["tag_0"])
-        tag_0_inv = np.linalg.inv(tag_0)
-        tag_1 = create_mat(extrinsics["tag_1"])
-        tag_1_inv = np.linalg.inv(tag_1)
-        extr2master = np.stack(
-            [create_mat(extrinsics[s]) for s in self._rs_serials], axis=0
-        )
-        extr2master_inv = np.stack([np.linalg.inv(t) for t in extr2master], axis=0)
-        extr2world = np.stack([tag_1_inv @ t for t in extr2master], axis=0)
-        extr2world_inv = np.stack([np.linalg.inv(t) for t in extr2world], axis=0)
-
         # Convert extrinsics to torch tensors
-        self._tag_0 = torch.from_numpy(tag_0).to(self._device)
-        self._tag_0_inv = torch.from_numpy(tag_0_inv).to(self._device)
-        self._tag_1 = torch.from_numpy(tag_1).to(self._device)
-        self._tag_1_inv = torch.from_numpy(tag_1_inv).to(self._device)
-        self._extr2master = torch.from_numpy(extr2master).to(self._device)
-        self._extr2master_inv = torch.from_numpy(extr2master_inv).to(self._device)
-        self._extr2world = torch.from_numpy(extr2world).to(self._device)
-        self._extr2world_inv = torch.from_numpy(extr2world_inv).to(self._device)
+        self._tag_0 = torch.from_numpy(data["tag_0"]).to(self._device)
+        self._tag_0_inv = torch.from_numpy(data["tag_0_inv"]).to(self._device)
+        self._tag_1 = torch.from_numpy(data["tag_1"]).to(self._device)
+        self._tag_1_inv = torch.from_numpy(data["tag_1_inv"]).to(self._device)
+        self._extr2master = torch.from_numpy(data["extr2master"]).to(self._device)
+        self._extr2master_inv = torch.from_numpy(data["extr2master_inv"]).to(
+            self._device
+        )
+        self._extr2world = torch.from_numpy(data["extr2world"]).to(self._device)
+        self._extr2world_inv = torch.from_numpy(data["extr2world_inv"]).to(
+            self._device
+        )
 
     def _load_mano_beta(self) -> torch.Tensor:
         file_path = self._calib_folder / "mano" / f"{self._subject_id}.yaml"
+        # 如果不存在则全为10个0
+        if not file_path.exists():
+            self._mano_beta = np.zeros(10, dtype=np.float32)
+            return
         data = read_data_from_yaml(file_path)
         return torch.tensor(data["betas"], dtype=torch.float32, device=self._device)
 
@@ -218,7 +213,7 @@ class SequenceLoader:
 
         verts, faces, norms = [], [], []
         for obj_file in self.object_cleaned_mesh_files:
-            m = trimesh.load(obj_file, process=False)
+            m = trimesh.load(obj_file, process=False, force='mesh')
             verts.append(m.vertices)
             faces.append(m.faces)
             norms.append(m.vertex_normals)
@@ -450,23 +445,31 @@ class SequenceLoader:
         return self._extr2world_inv
 
     @property
+    def cam2world(self) -> torch.Tensor:
+        return self._extr2world
+
+    @property
+    def world2cam(self) -> torch.Tensor:
+        return self._extr2world_inv
+
+    @property
     def tag_0(self) -> torch.Tensor:
-        """tag_0 to rs_master transformation matrix"""
+        """Legacy compatibility alias. The cam2world format does not store tag_0."""
         return self._tag_0
 
     @property
     def tag_0_inv(self) -> torch.Tensor:
-        """rs_master to tag_0 transformation matrix"""
+        """Legacy compatibility alias. The cam2world format does not store tag_0."""
         return self._tag_0_inv
 
     @property
     def tag_1(self) -> torch.Tensor:
-        """tag_1 to rs_master transformation matrix"""
+        """Legacy alias for world2cam of the master camera."""
         return self._tag_1
 
     @property
     def tag_1_inv(self) -> torch.Tensor:
-        """rs_master to tag_1 transformation matrix"""
+        """Legacy alias for cam2world of the master camera."""
         return self._tag_1_inv
 
     @property

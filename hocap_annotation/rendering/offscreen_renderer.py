@@ -40,7 +40,7 @@ class OffscreenRenderer:
         if isinstance(mesh, trimesh.Trimesh):
             pyr_mesh = pyrender.Mesh.from_trimesh(mesh)
         elif isinstance(mesh, str):
-            pyr_mesh = pyrender.Mesh.from_trimesh(trimesh.load(mesh))
+            pyr_mesh = pyrender.Mesh.from_trimesh(trimesh.load(mesh, force='mesh'))
         else:
             raise ValueError("Invalid mesh type!!!")
         self._pyr_meshes[name] = pyr_mesh

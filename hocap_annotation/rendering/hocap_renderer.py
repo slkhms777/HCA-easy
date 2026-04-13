@@ -280,23 +280,23 @@ class HOCapRenderer:
         return r_masks
 
     def render_pose_images(
-        self, save_folder, save_video_path, vis_only=True, save_vis=False
+        self,
+        save_folder,
+        save_video_path,
+        vis_only=True,
+        save_vis=False,
+        single_process=False,
     ):
         self._logger.info(f"Rendering pose images...")
         vis_images = [None] * self._num_frames
         render_images = {s: [None] * self._num_frames for s in self._rs_serials}
         tqbar = tqdm(total=self._num_frames, ncols=100)
-        with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
-            futures = {
-                executor.submit(
-                    self.get_rendered_colors_by_frame_id, frame_id, return_vis=True
-                ): frame_id
-                for frame_id in range(self._num_frames)
-            }
-            for future in concurrent.futures.as_completed(futures):
-                frame_id = futures[future]
+        if single_process:
+            for frame_id in range(self._num_frames):
                 try:
-                    r_images, vis_image = future.result()
+                    r_images, vis_image = self.get_rendered_colors_by_frame_id(
+                        frame_id, return_vis=True
+                    )
                     if not vis_only:
                         for s, r_image in zip(self._rs_serials, r_images):
                             render_images[s][frame_id] = r_image
@@ -305,6 +305,26 @@ class HOCapRenderer:
                     self._logger.error(f"Error rendering frame {frame_id}: {e}")
                 finally:
                     tqbar.update(1)
+        else:
+            with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        self.get_rendered_colors_by_frame_id, frame_id, return_vis=True
+                    ): frame_id
+                    for frame_id in range(self._num_frames)
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    frame_id = futures[future]
+                    try:
+                        r_images, vis_image = future.result()
+                        if not vis_only:
+                            for s, r_image in zip(self._rs_serials, r_images):
+                                render_images[s][frame_id] = r_image
+                        vis_images[frame_id] = vis_image
+                    except Exception as e:
+                        self._logger.error(f"Error rendering frame {frame_id}: {e}")
+                    finally:
+                        tqbar.update(1)
         tqbar.close()
         self._logger.info(f"Saving vis video...")
         self._save_video(Path(save_video_path), vis_images)
@@ -332,23 +352,23 @@ class HOCapRenderer:
         gc.collect()
 
     def render_depth_images(
-        self, save_folder, save_video_path, vis_only=True, save_vis=False
+        self,
+        save_folder,
+        save_video_path,
+        vis_only=True,
+        save_vis=False,
+        single_process=False,
     ):
         self._logger.info(f"Rendering depth images...")
         vis_images = [None] * self._num_frames
         render_images = {s: [None] * self._num_frames for s in self._rs_serials}
         tqbar = tqdm(total=self._num_frames, ncols=100)
-        with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
-            futures = {
-                executor.submit(
-                    self.get_rendered_depths_by_frame_id, frame_id, return_vis=True
-                ): frame_id
-                for frame_id in range(self._num_frames)
-            }
-            for future in concurrent.futures.as_completed(futures):
-                frame_id = futures[future]
+        if single_process:
+            for frame_id in range(self._num_frames):
                 try:
-                    r_images, vis_image = future.result()
+                    r_images, vis_image = self.get_rendered_depths_by_frame_id(
+                        frame_id, return_vis=True
+                    )
                     if not vis_only:
                         for s, r_image in zip(self._rs_serials, r_images):
                             render_images[s][frame_id] = r_image
@@ -357,6 +377,26 @@ class HOCapRenderer:
                     self._logger.error(f"Error rendering frame {frame_id}: {e}")
                 finally:
                     tqbar.update(1)
+        else:
+            with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        self.get_rendered_depths_by_frame_id, frame_id, return_vis=True
+                    ): frame_id
+                    for frame_id in range(self._num_frames)
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    frame_id = futures[future]
+                    try:
+                        r_images, vis_image = future.result()
+                        if not vis_only:
+                            for s, r_image in zip(self._rs_serials, r_images):
+                                render_images[s][frame_id] = r_image
+                        vis_images[frame_id] = vis_image
+                    except Exception as e:
+                        self._logger.error(f"Error rendering frame {frame_id}: {e}")
+                    finally:
+                        tqbar.update(1)
         tqbar.close()
         self._logger.info(f"Saving vis video...")
         self._save_video(Path(save_video_path), vis_images)
@@ -384,23 +424,23 @@ class HOCapRenderer:
         gc.collect()
 
     def render_mask_images(
-        self, save_folder, save_video_path, vis_only=True, save_vis=False
+        self,
+        save_folder,
+        save_video_path,
+        vis_only=True,
+        save_vis=False,
+        single_process=False,
     ):
         self._logger.info(f"Rendering mask images...")
         vis_images = [None] * self._num_frames
         render_images = {s: [None] * self._num_frames for s in self._rs_serials}
         tqbar = tqdm(total=self._num_frames, ncols=100)
-        with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
-            futures = {
-                executor.submit(
-                    self.get_rendered_segs_by_frame_id, frame_id, return_vis=True
-                ): frame_id
-                for frame_id in range(self._num_frames)
-            }
-            for future in concurrent.futures.as_completed(futures):
-                frame_id = futures[future]
+        if single_process:
+            for frame_id in range(self._num_frames):
                 try:
-                    r_images, vis_image = future.result()
+                    r_images, vis_image = self.get_rendered_segs_by_frame_id(
+                        frame_id, return_vis=True
+                    )
                     if not vis_only:
                         for s, r_image in zip(self._rs_serials, r_images):
                             render_images[s][frame_id] = r_image
@@ -409,6 +449,26 @@ class HOCapRenderer:
                     self._logger.error(f"Error rendering frame {frame_id}: {e}")
                 finally:
                     tqbar.update(1)
+        else:
+            with concurrent.futures.ProcessPoolExecutor(CFG.max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        self.get_rendered_segs_by_frame_id, frame_id, return_vis=True
+                    ): frame_id
+                    for frame_id in range(self._num_frames)
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    frame_id = futures[future]
+                    try:
+                        r_images, vis_image = future.result()
+                        if not vis_only:
+                            for s, r_image in zip(self._rs_serials, r_images):
+                                render_images[s][frame_id] = r_image
+                        vis_images[frame_id] = vis_image
+                    except Exception as e:
+                        self._logger.error(f"Error rendering frame {frame_id}: {e}")
+                    finally:
+                        tqbar.update(1)
         tqbar.close()
         self._logger.info(f"Saving vis video...")
         self._save_video(Path(save_video_path), vis_images)

@@ -275,7 +275,7 @@ def is_valid_pose(pose_w):
         Boolean, True if pose is valid.
     """
     x, y, z = pose_w[-3:]
-    return -0.6 < x < 0.6 and -0.4 < y < 0.4 and -0.01 < z < 0.6
+    return -0.6 < x < 0.6 and -0.4 < y < 0.4 and -0.6 < z < 0.6
 
 
 def transform_poses_to_world(mat_poses_c, cam_RTs):
@@ -473,12 +473,12 @@ def is_valid_ob_pose(ob_in_cam, cam_RT=None):
     else:
         ob_in_world = cam_RT @ ob_in_cam
         x, y, z = ob_in_world[:3, 3]
-    return -0.6 < x < 0.6 and -0.4 < y < 0.4 and -0.01 < z < 0.6
+    return -0.6 < x < 0.6 and -0.4 < y < 0.4 and -0.6 < z < 0.6
 
 
 def initialize_fd_pose_estimator(textured_mesh_path, cleaned_mesh_path, debug_dir):
-    textured_mesh = trimesh.load(textured_mesh_path, process=False)
-    cleaned_mesh = trimesh.load(cleaned_mesh_path, process=False)
+    textured_mesh = trimesh.load(textured_mesh_path, process=False, force='mesh')
+    cleaned_mesh = trimesh.load(cleaned_mesh_path, process=False, force='mesh')
     return FoundationPose(
         model_pts=cleaned_mesh.vertices.astype(np.float32),
         model_normals=cleaned_mesh.vertex_normals.astype(np.float32),
@@ -520,8 +520,8 @@ def run_pose_estimation(
     valid_Ks = data_loader.rs_Ks[valid_serial_indices]
     valid_RTs = data_loader.extr2world[valid_serial_indices]
     valid_RTs_inv = data_loader.extr2world_inv[valid_serial_indices]
-    object_mesh_textured = trimesh.load(data_loader.object_textured_files[object_idx])
-    object_mesh_cleaned = trimesh.load(data_loader.object_cleaned_files[object_idx])
+    object_mesh_textured = trimesh.load(data_loader.object_textured_files[object_idx], force='mesh')
+    # object_mesh_cleaned = trimesh.load(data_loader.object_cleaned_files[object_idx], force='mesh')
     empty_mat_pose = np.full((4, 4), -1.0, dtype=np.float32)
 
     # Check start and end frame_idx
@@ -536,9 +536,9 @@ def run_pose_estimation(
     set_seed(0)
 
     estimator = FoundationPose(
-        model_pts=object_mesh_cleaned.vertices.astype(np.float32),
-        model_normals=object_mesh_cleaned.vertex_normals.astype(np.float32),
-        mesh=trimesh.load(data_loader.object_textured_files[object_idx]),
+        model_pts=object_mesh_textured.vertices.astype(np.float32),
+        model_normals=object_mesh_textured.vertex_normals.astype(np.float32),
+        mesh=object_mesh_textured,
         scorer=ScorePredictor(),
         refiner=PoseRefinePredictor(),
         glctx=dr.RasterizeCudaContext(),

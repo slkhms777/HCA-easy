@@ -1,4 +1,5 @@
 from ..utils import *
+from .extrinsics import load_extrinsics
 
 
 class HOCapLoader:
@@ -93,16 +94,16 @@ class HOCapLoader:
             self._models_folder / obj_id / "textured_mesh.obj"
             for obj_id in self._object_ids
         ]
-        self._object_cleaned_files = [
-            self._models_folder / obj_id / "cleaned_mesh_10000.obj"
-            for obj_id in self._object_ids
-        ]
+        # self._object_cleaned_files = [
+        #     self._models_folder / obj_id / "cleaned_mesh_10000.obj"
+        #     for obj_id in self._object_ids
+        # ]
 
         # Load camera intrinsics
         self._load_intrinsics()
 
-        # Load rs camera extrinsics
-        self._load_extrinsics(data["extrinsics"])
+        # Load rs camera extrinsics from per-camera cam2world/world2cam files
+        self._load_extrinsics(data.get("extrinsics"))
 
         # Load MANO shape parameters
         self._load_mano_beta()
@@ -127,39 +128,30 @@ class HOCapLoader:
         )
         # self._hl_K = read_K_from_yaml(self._hl_serial)
 
-    def _load_extrinsics(self, file_name):
-        def create_mat(values):
-            return np.array(
-                [values[0:4], values[4:8], values[8:12], [0, 0, 0, 1]], dtype=np.float32
-            )
-
-        file_path = self._calib_folder / "extrinsics" / f"{file_name}"
-        data = read_data_from_yaml(file_path)
-
-        extrinsics = data["extrinsics"]
-        tag_1 = create_mat(extrinsics["tag_1"])
-        tag_1_inv = np.linalg.inv(tag_1)
-        tag2master = create_mat(extrinsics["tag_0"])
-        tag2master_inv = np.linalg.inv(tag2master)
-        tag2world = tag_1_inv @ tag2master
-        tag2world_inv = np.linalg.inv(tag2world)
-        extr2master = [create_mat(extrinsics[s]) for s in self._rs_serials]
-        extr2master_inv = [np.linalg.inv(tt) for tt in extr2master]
-        extr2world = [tag_1_inv @ tt for tt in extr2master]
-        extr2world_inv = [np.linalg.inv(tt) for tt in extr2world]
+    def _load_extrinsics(self, extrinsics_source=None):
+        data = load_extrinsics(
+            calib_folder=self._calib_folder,
+            subject_id=self._subject_id,
+            serials=self._rs_serials,
+            extrinsics_source=extrinsics_source,
+        )
 
         self._rs_master = data["rs_master"]
-        self._tag2master = tag2master
-        self._tag2master_inv = tag2master_inv
-        self._tag2world = tag2world
-        self._tag2world_inv = tag2world_inv
-        self._extr2master = np.stack(extr2master, axis=0)
-        self._extr2master_inv = np.stack(extr2master_inv, axis=0)
-        self._extr2world = np.stack(extr2world, axis=0)
-        self._extr2world_inv = np.stack(extr2world_inv, axis=0)
+        self._tag2master = data["tag_0"]
+        self._tag2master_inv = data["tag_0_inv"]
+        self._tag2world = data["tag_1_inv"]
+        self._tag2world_inv = data["tag_1"]
+        self._extr2master = data["extr2master"]
+        self._extr2master_inv = data["extr2master_inv"]
+        self._extr2world = data["extr2world"]
+        self._extr2world_inv = data["extr2world_inv"]
 
     def _load_mano_beta(self):
         file_path = self._calib_folder / "mano" / f"{self._subject_id}.yaml"
+        # 如果不存在则全为10个0
+        if not file_path.exists():
+            self._mano_beta = np.zeros(10, dtype=np.float32)
+            return
         data = read_data_from_yaml(file_path)
         self._mano_beta = np.array(data["betas"], dtype=np.float32)
 
@@ -247,6 +239,14 @@ class HOCapLoader:
 
     @property
     def extr2world_inv(self):
+        return self._extr2world_inv
+
+    @property
+    def cam2world(self):
+        return self._extr2world
+
+    @property
+    def world2cam(self):
         return self._extr2world_inv
 
     @property

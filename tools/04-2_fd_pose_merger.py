@@ -152,8 +152,9 @@ def pose_jitter_smooth(
 
 
 class FoundationPoseMerger:
-    def __init__(self, sequence_folder):
+    def __init__(self, sequence_folder, single_process=False):
         self._data_folder = Path(sequence_folder)
+        self._single_process = single_process
         self._fd_pose_folder = self._data_folder / "processed" / "fd_pose_solver"
         self._log_file = self._fd_pose_folder / "fd_pose_merger.log"
 
@@ -229,7 +230,11 @@ class FoundationPoseMerger:
         renderer = HOCapRenderer(self._data_folder, log_file=self._log_file)
         renderer.update_render_dict(poses_o, verts_m, faces_m, colors_m, joints_m)
         renderer.render_pose_images(
-            save_vis_folder, save_video_file, vis_only=True, save_vis=save_vis
+            save_vis_folder,
+            save_video_file,
+            vis_only=True,
+            save_vis=save_vis,
+            single_process=self._single_process,
         )
 
     def merge_fd_poses(self):
@@ -382,10 +387,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sequence_folder", type=str, default=None, help="Path to the sequence folder."
     )
+    parser.add_argument(
+        "--single_process",
+        action="store_true",
+        help="Use single-process rendering to avoid multiprocessing pickle errors.",
+    )
     args = parser.parse_args()
 
     if args.sequence_folder is None:
         raise ValueError("Please provide the sequence folder path.")
 
-    pose_merger = FoundationPoseMerger(args.sequence_folder)
+    pose_merger = FoundationPoseMerger(
+        args.sequence_folder, single_process=args.single_process
+    )
     pose_merger.run()
