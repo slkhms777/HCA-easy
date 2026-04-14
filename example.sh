@@ -1,4 +1,4 @@
-conda activate hocap-annotation
+# conda activate hocap-annotation
 
 # 物体视频分割 + 预测物体pose
 # CUDA_VISIBLE_DEVICES=1 python tools/01_video_segmentation.py --sequence_folder datasets/subject_example/20231027_112303

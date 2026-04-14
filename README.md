@@ -214,7 +214,7 @@ betas:
 datasets/models/G01_1/
 ├── textured_mesh.mtl
 ├── textured_mesh.obj
-└── *.png / *.jpg
+└── *.png 或 *.jpg
 ```
 
 ### 4. 序列数据
@@ -222,7 +222,7 @@ datasets/models/G01_1/
 目录结构示例：
 
 ```text
-datasets/subject_{i}/
+datasets/subject_{i}/{date_日期}/
 ├── serial_1/
 │   ├── color_{frame_idx:06d}.jpg
 │   └── depth_{frame_idx:06d}.png
@@ -287,6 +287,7 @@ python tools/01_video_segmentation.py --sequence_folder <path_to_sequence_folder
 
 - 请确保显存和内存充足。
 - 需提前使用半自动标注 notebook 来提供初始值：`sam2.ipynb`。
+- 详细标注步骤见 [`SAM2_USAGE.md`](/mnt/16T/gjx/HO-Cap-Annotation/SAM2_USAGE.md)。
 - 对每个视角，至少需要标注一帧，通常可从第 `0` 帧开始。
 - 每个物体的 mask 值必须严格对应 `meta.yaml` 中 `object_ids` 的顺序。
 - 例如：第 1 个物体的 mask value 应为 `1`，第 4 个物体的 mask value 应为 `4`。
@@ -347,4 +348,3 @@ python tools/05_mano_pose_solver_wosdf.py --sequence_folder <path_to_sequence_fo
 - 如果某个视角的 2D 关键点检测质量较差，可以在 `meta.yaml` 中注释掉该视角的 `serial id`。
 - 一旦某个视角被注释移除，后续 3D 关键点拟合与 MANO 拟合阶段应保持一致。
 - 如果渲染报错，通常与多进程渲染有关，可加上 `--single_process` 参数改为单进程渲染。
-
