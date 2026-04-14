@@ -5,8 +5,8 @@
 只包含代码和普通小文件，不自动下载 Git LFS 管理的大文件，请使用：
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone <repo_url>
-cd HO-Cap-Annotation
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/slkhms777/HCA-easy.git
+cd HCA-easy
 ```
 
 ## Installation
@@ -49,7 +49,7 @@ config/mano_models
 
 #### 5.1 安装 FoundationPose
 
-初始化并编译：
+配置 FoundationPose 环境：
 
 ```bash
 bash ./scripts/install_foundationpose.sh
@@ -63,7 +63,7 @@ bash ./scripts/download_models.sh --foundationpose
 
 #### 5.2 安装 SAM2
 
-初始化并编译：
+配置 SAM2 环境：
 
 ```bash
 bash ./scripts/install_sam2.sh
