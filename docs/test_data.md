@@ -2,20 +2,28 @@
 
 测试数据建议放在 `datasets/` 目录下。`datasets/test_data.zip` 使用 Git LFS 管理。
 
-进入仓库后，可以单独拉取测试数据：
+进入仓库后，单独拉取测试数据：
 
 ```bash
 git lfs pull --include="datasets/test_data.zip"
 ```
 
-如果仓库已经 clone 下来了，也可以之后再单独拉取测试数据：
+或者使用：
 
 ```bash
 git lfs fetch --include="datasets/test_data.zip"
 git lfs checkout datasets/test_data.zip
 ```
 
-解压test_data.zip到./datasets，文件结果如下：
+解压test_data.zip到./datasets
+```bash
+mkdir temp_dir
+unzip datasets/test_data.zip -d temp_dir
+mv temp_dir/test_data/* datasets/
+rm -r temp_dir
+```
+
+文件结果如下：
 ```text
 datasets/
 ├── calibration/

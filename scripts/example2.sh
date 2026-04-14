@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 # 1. conda activate hocap-annotation
 # 2. 需要提前标注好sam2的初始mask
 

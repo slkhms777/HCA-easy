@@ -1,5 +1,8 @@
 # HO-Cap Annotation Pipeline (cleaned version)
 
+该仓库为HO-Cap-Annotation的精简版本，原仓库地址：https://github.com/IRVLUTD/HO-Cap-Annotation.git
+
+
 ## Clone Repository
 
 只包含代码和普通小文件，不自动下载 Git LFS 管理的大文件，请使用：
@@ -75,9 +78,15 @@ bash ./scripts/install_sam2.sh
 bash ./scripts/download_models.sh --sam2
 ```
 
+#### 5.3 安装 MediaPipe 权重
+
+```bash
+bash ./scripts/download_models.sh --mediapipe
+```
+
 ## 文档
 
-- [数据组织](/mnt/16T/gjx/HO-Cap-Annotation/docs/data_organization.md)
-- [测试数据](/mnt/16T/gjx/HO-Cap-Annotation/docs/test_data.md)
-- [使用流程](/mnt/16T/gjx/HO-Cap-Annotation/docs/usage.md)
-- [SAM2 半自动标注说明](/mnt/16T/gjx/HO-Cap-Annotation/docs/SAM2_USAGE.md)
+- [数据组织](./docs/data_organization.md)
+- [测试数据](./docs/test_data.md)
+- [使用流程](./docs/usage.md)
+- [SAM2 半自动标注说明](./docs/SAM2_USAGE.md)

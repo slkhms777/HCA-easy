@@ -1,8 +1,11 @@
+#!/bin/bash
+set -e
+
 # 1. conda activate hocap-annotation
 # 2. 需要提前标注好sam2的初始mask
 
 # 物体视频分割 + 预测物体pose
-CUDA_VISIBLE_DEVICES=1 python tools/01_video_segmentation.py --sequence_folder datasets/subject_example/20231027_112303
+CUDA_VISIBLE_DEVICES=1 python tools/01_video_segmentation.py --sequence_folder datasets/subject_example1/20231027_112303
 CUDA_VISIBLE_DEVICES=1 python tools/04-1_fd_pose_solver.py --sequence_folder datasets/subject_example1/20231027_112303 --object_idx 1
 CUDA_VISIBLE_DEVICES=1 python tools/04-1_fd_pose_solver.py --sequence_folder datasets/subject_example1/20231027_112303 --object_idx 2
 CUDA_VISIBLE_DEVICES=1 python tools/04-1_fd_pose_solver.py --sequence_folder datasets/subject_example1/20231027_112303 --object_idx 3

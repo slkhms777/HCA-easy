@@ -39,24 +39,24 @@ else
     handle_error "Failed to install hocap-annotation."
 fi
 
-# Build meshsdf_loss
-log_message "Building meshsdf_loss..."
-MYCUDA_DIR="${PROJ_ROOT}/hocap_annotation/loss/meshsdf_loss"
+# # Build meshsdf_loss
+# log_message "Building meshsdf_loss..."
+# MYCUDA_DIR="${PROJ_ROOT}/hocap_annotation/loss/meshsdf_loss"
 
-# Navigate to meshsdf_loss directory
-if cd "$MYCUDA_DIR"; then
-    log_message "Cleaning previous build artifacts in meshsdf_loss..."
-    rm -rf build *egg* *.so
+# # Navigate to meshsdf_loss directory
+# if cd "$MYCUDA_DIR"; then
+#     log_message "Cleaning previous build artifacts in meshsdf_loss..."
+#     rm -rf build *egg* *.so
 
-    log_message "Installing meshsdf_loss..."
-    if "${PYTHON_PATH}" -m pip install . --no-cache-dir --no-build-isolation; then
-        log_message "meshsdf_loss installed successfully."
-    else
-        handle_error "Failed to install meshsdf_loss."
-    fi
-else
-    handle_error "Failed to cd to meshsdf_loss directory: $MYCUDA_DIR"
-fi
+#     log_message "Installing meshsdf_loss..."
+#     if "${PYTHON_PATH}" -m pip install . --no-cache-dir --no-build-isolation; then
+#         log_message "meshsdf_loss installed successfully."
+#     else
+#         handle_error "Failed to install meshsdf_loss."
+#     fi
+# else
+#     handle_error "Failed to cd to meshsdf_loss directory: $MYCUDA_DIR"
+# fi
 
 # Return to the project root directory
 cd "$PROJ_ROOT" || handle_error "Failed to cd to project root directory: $PROJ_ROOT"
