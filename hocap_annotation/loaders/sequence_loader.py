@@ -168,8 +168,7 @@ class SequenceLoader:
         file_path = self._calib_folder / "mano" / f"{self._subject_id}.yaml"
         # 如果不存在则全为10个0
         if not file_path.exists():
-            self._mano_beta = np.zeros(10, dtype=np.float32)
-            return
+            return torch.zeros((10,), dtype=torch.float32, device=self._device)
         data = read_data_from_yaml(file_path)
         return torch.tensor(data["betas"], dtype=torch.float32, device=self._device)
 

@@ -150,7 +150,7 @@ class HOCapLoader:
         file_path = self._calib_folder / "mano" / f"{self._subject_id}.yaml"
         # 如果不存在则全为10个0
         if not file_path.exists():
-            self._mano_beta = np.zeros(10, dtype=np.float32)
+            self._mano_beta = np.zeros((10,), dtype=np.float32)
             return
         data = read_data_from_yaml(file_path)
         self._mano_beta = np.array(data["betas"], dtype=np.float32)
