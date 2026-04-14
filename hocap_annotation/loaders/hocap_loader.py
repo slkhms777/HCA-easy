@@ -100,7 +100,7 @@ class HOCapLoader:
         # ]
 
         # Load camera intrinsics
-        self._load_intrinsics()
+        self._load_intrinsics(data.get("intrinsics"))
 
         # Load rs camera extrinsics from per-camera cam2world/world2cam files
         self._load_extrinsics(data.get("extrinsics"))
@@ -108,9 +108,13 @@ class HOCapLoader:
         # Load MANO shape parameters
         self._load_mano_beta()
 
-    def _load_intrinsics(self):
-        def read_K_from_yaml(serial, cam_type="color"):
-            file_path = self._calib_folder / "intrinsics" / f"{serial}.yaml"
+    def _load_intrinsics(self, intrinsics_source=None):
+        def read_K_from_yaml(serial, cam_type="color", intrinsics_source=None):
+            if intrinsics_source is not None:
+                intrinsics_source = Path(intrinsics_source)
+                file_path = intrinsics_source / f"{serial}.yaml"
+            else:
+                raise ValueError("No intrinsics source provided in meta.yaml")
             data = read_data_from_yaml(file_path)[cam_type]
             K = np.array(
                 [
@@ -123,12 +127,14 @@ class HOCapLoader:
             return K
 
         self._rs_Ks = np.stack(
-            [read_K_from_yaml(serial) for serial in self._rs_serials],
+            [read_K_from_yaml(serial, intrinsics_source=intrinsics_source) for serial in self._rs_serials],
             axis=0,
         )
         # self._hl_K = read_K_from_yaml(self._hl_serial)
 
     def _load_extrinsics(self, extrinsics_source=None):
+        if extrinsics_source is None:
+            raise ValueError("No extrinsics source provided in meta.yaml")
         data = load_extrinsics(
             calib_folder=self._calib_folder,
             subject_id=self._subject_id,

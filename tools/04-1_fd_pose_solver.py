@@ -578,9 +578,12 @@ def run_pose_estimation(
                     prev_pose=ob_in_cam_poses[serial_idx],
                 )
             else:
+                # init_ob_pos_center = data_loader.get_init_translation(
+                #     frame_id, [serial], object_idx, kernel_size=5
+                # )[0][0]
                 init_ob_pos_center = data_loader.get_init_translation(
-                    frame_id, [serial], object_idx, kernel_size=5
-                )[0][0]
+                    frame_id, valid_serials, object_idx, kernel_size=5
+                )[0][valid_serials.index(serial)]
                 if init_ob_pos_center is not None:
                     ob_in_cam_mat = estimator.register(
                         rgb=color,

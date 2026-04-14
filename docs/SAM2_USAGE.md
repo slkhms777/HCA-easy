@@ -36,12 +36,11 @@ notebook 中默认会读取：
 
 ### 4.2 添加提示点
 
-
 - `Click mode` 选择前景点 `Foreground (+)` 或背景点 `Background (-)`。
 - 如果 notebook 支持 live canvas，可以直接在左侧图像上点击加点。
 - 如果不支持 live canvas，可以手动填写 `X`、`Y` 后点击 `Add Point`。
 - 点错时可用 `Remove Last Point` 删除最后一个点。
-*一般而言，每个物体选1-2个点即可，如果物体和背景颜色相近，可以在背景加一个`Background (-)`点*
+- 一般而言，每个物体选 1-2 个点即可，如果物体和背景颜色相近，可以在背景加一个 `Background (-)` 点。
 
 ### 4.3 预览与提交 mask
 

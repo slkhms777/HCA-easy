@@ -104,7 +104,7 @@ class SequenceLoader:
         ]
 
         # Load camera intrinsics
-        self._load_intrinsics()
+        self._load_intrinsics(data.get("intrinsics"))
 
         # Load rs camera extrinsics from per-camera cam2world/world2cam files
         self._load_extrinsics(data.get("extrinsics"))
@@ -112,9 +112,14 @@ class SequenceLoader:
         # Load MANO shape parameters
         self._mano_beta = self._load_mano_beta()
 
-    def _load_intrinsics(self):
-        def read_K_from_yaml(serial, cam_type="color"):
-            yaml_file = self._calib_folder / "intrinsics" / f"{serial}.yaml"
+    def _load_intrinsics(self, intrinsics_source=None):
+        def read_K_from_yaml(serial, cam_type="color", intrinsics_source=None):
+            if intrinsics_source is not None:
+                intrinsics_source = Path(intrinsics_source)
+                yaml_file = intrinsics_source / f"{serial}.yaml"
+            else:
+                raise ValueError("Intrinsics source must be provided in meta.yaml")
+            # yaml_file = self._calib_folder / "intrinsics" / f"{serial}.yaml"
             data = read_data_from_yaml(yaml_file)[cam_type]
             K = np.array(
                 [
@@ -127,7 +132,7 @@ class SequenceLoader:
             return K
 
         rs_Ks = np.stack(
-            [read_K_from_yaml(serial) for serial in self._rs_serials], axis=0
+            [read_K_from_yaml(serial, intrinsics_source=intrinsics_source) for serial in self._rs_serials], axis=0
         )
         rs_Ks_inv = np.stack([np.linalg.inv(K) for K in rs_Ks], axis=0)
 

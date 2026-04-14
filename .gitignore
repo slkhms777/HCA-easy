@@ -147,3 +147,4 @@ cython_debug/
 .DS_Store
 
 trash/*
+test_data/*
