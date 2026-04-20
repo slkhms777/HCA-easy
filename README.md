@@ -5,10 +5,9 @@
 
 ## Clone Repository
 
-只包含代码和普通小文件，不自动下载 Git LFS 管理的大文件，请使用：
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/slkhms777/HCA-easy.git
+git clone https://github.com/slkhms777/HCA-easy.git
 cd HCA-easy
 ```
 

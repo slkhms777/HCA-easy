@@ -148,3 +148,4 @@ cython_debug/
 
 trash/*
 test_data/*
+temp_dir/*
