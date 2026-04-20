@@ -50,15 +50,11 @@ python tools/04-2_fd_pose_merger.py --sequence_folder <path_to_sequence_folder>
 python tools/02_mp_hand_detection.py --sequence_folder <path_to_sequence_folder>
 ```
 
-![2d_hand_detection](./resources/02_2d_hand_detection.png)
-
 ## 4. 3D 手部关键点生成
 
 ```bash
 python tools/03_mp_3d_joints_generation.py --sequence_folder <path_to_sequence_folder>
 ```
-
-![3d_hand_joints_estimation](./resources/03_3d_hand_joints.png)
 
 ## 5. MANO 手部拟合
 
