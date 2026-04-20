@@ -10,7 +10,7 @@ python tools/01_video_segmentation.py --sequence_folder <path_to_sequence_folder
 
 - 请确保显存和内存充足。
 - 需提前使用半自动标注 notebook 来提供初始值：`sam2.ipynb`。
-- 详细标注步骤见 [SAM2_USAGE.md](/mnt/16T/gjx/HO-Cap-Annotation/docs/SAM2_USAGE.md)。
+- 详细标注步骤见 [SAM2_USAGE.md](./SAM2_USAGE.md)。
 - 对每个视角，至少需要标注一帧，通常可从第 `0` 帧开始。
 - 每个物体的 mask 值必须严格对应 `meta.yaml` 中 `object_ids` 的顺序。
 - 例如：第 1 个物体的 mask value 应为 `1`，第 4 个物体的 mask value 应为 `4`。

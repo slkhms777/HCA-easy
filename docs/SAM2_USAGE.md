@@ -1,6 +1,6 @@
 # SAM2 半自动标注使用说明
 
-本文档说明如何使用仓库根目录下的 [`sam2.ipynb`](/mnt/16T/gjx/HO-Cap-Annotation/sam2.ipynb) 为后续视频分割提供初始化 mask。
+本文档说明如何使用仓库根目录下的 [`sam2.ipynb`](../sam2.ipynb) 为后续视频分割提供初始化 mask。
 
 ## 1. 适用场景
 
@@ -16,7 +16,7 @@
 
 ## 3. 启动方式
 
-在项目根目录启动 Jupyter，然后打开 [`sam2.ipynb`](/mnt/16T/gjx/HO-Cap-Annotation/sam2.ipynb)。
+在项目根目录启动 Jupyter，然后打开 [`sam2.ipynb`](../sam2.ipynb)。
 
 notebook 中默认会读取：
 
